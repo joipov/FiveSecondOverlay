@@ -1,0 +1,38 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LuaLS/lua-language-server/master/locale/en-us/setting.lua",
+  "runtime.version": "Lua 5.1",
+  "runtime.builtin": {
+    "basic": "disable",
+    "debug": "disable",
+    "io": "disable",
+    "math": "disable",
+    "os": "disable",
+    "package": "disable",
+    "string": "disable",
+    "table": "disable",
+    "utf8": "disable"
+  },
+  "workspace.library": [
+    ".annotations",
+    "C:/Users/rubin/.cursor/extensions/ketho.wow-api/Annotations/Core"
+  ],
+  "workspace.ignoreDir": [
+    ".release"
+  ],
+  "workspace.checkThirdParty": false,
+  "diagnostics.globals": [
+    "SLASH_FSO1",
+    "SLASH_FSO2",
+    "JoipovAddons_RegisterHint",
+    "JoipovAddons_Print",
+    "FiveSecondOverlayDB",
+    "FiveSecondOverlayHighlight",
+    "FiveSecondOverlayMinimapButton",
+    "CreateSettingsButtonInitializer"
+  ],
+  "diagnostics.severity": {
+    "undefined-global": "Error",
+    "unused-local": "Error",
+    "unused-function": "Error"
+  }
+}
