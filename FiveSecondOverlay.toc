@@ -8,7 +8,7 @@
 ## OptionalDeps: EllesmereUIResourceBars, EllesmereUIUnitFrames, LibStub, LibDataBroker-1.1, LibDBIcon-1.0
 ## IconTexture: Interface\Icons\Spell_Holy_MagicalSentry
 ## AddonCompartmentFunc: FiveSecondOverlay_OnAddonCompartmentClick
-## X-License: All Rights Reserved
+## X-License: MIT
 ## X-Website: https://github.com/joipov/FiveSecondOverlay
 ## AllowLoadGameType: camelot
 
