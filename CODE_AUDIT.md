@@ -109,7 +109,7 @@ Run after `/reload` with EllesmereUI Resource Bars enabled:
 - [ ] Next mana spend freezes timer; leave combat freezes timer
 - [ ] Timer value remains until next regen window
 - [ ] Highlight attaches to `ERB_PrimaryBar`
-- [ ] Minimap button off by default; enabling in settings shows it; click opens settings; drag repositions
+- [ ] Minimap button on by default; turning it off in settings hides it; click opens settings; drag repositions
 - [ ] `/fso` opens Settings category
 - [ ] Disable overlay in settings hides highlight and stops regen updates
 - [ ] Optional: `assert(FiveSecondOverlayDB.minimapIcon ~= nil)` and that it is not the defaults table after drag

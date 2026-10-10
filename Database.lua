@@ -3,13 +3,13 @@ local _, ns = ...
 -- SavedVariables: defaults, migrations, validation.
 -- Plain Lua so logic stays testable without a client.
 
-local DB_VERSION = 6
+local DB_VERSION = 7
 
 -- Scalar defaults only. Tables are constructed fresh in EnsureTables.
 -- The highlight stays white and shrinks from the right toward the left.
 local defaults = {
 	enabled = true,
-	showMinimapButton = false,
+	showMinimapButton = true,
 	minimapAngle = 220,
 	a = 0.35,
 	inset = 1,
@@ -94,6 +94,11 @@ local function MigrateDB(db)
 			db.g = nil
 			db.b = nil
 		end
+	end
+	if version < 7 then
+		-- The button used to default off, and that false was written into
+		-- saved variables. Turn it on once. A later choice stays put.
+		db.showMinimapButton = true
 	end
 	db.version = DB_VERSION
 end

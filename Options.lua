@@ -103,6 +103,22 @@ function _G.FiveSecondOverlay_OnAddonCompartmentClick()
 	ns.OpenSettings()
 end
 
+function _G.FiveSecondOverlay_OnAddonCompartmentEnter(_, owner)
+	if not GameTooltip then
+		return
+	end
+	GameTooltip:SetOwner(owner or UIParent, "ANCHOR_LEFT")
+	GameTooltip:AddLine("Five Second Overlay")
+	GameTooltip:AddLine("Click for settings.", 1, 1, 1)
+	GameTooltip:Show()
+end
+
+function _G.FiveSecondOverlay_OnAddonCompartmentLeave()
+	if GameTooltip then
+		GameTooltip:Hide()
+	end
+end
+
 function ns.InitOptions()
 	if ns.settingsCategory or not ns.db or not Settings then
 		return
@@ -136,8 +152,8 @@ function ns.InitOptions()
 			"showMinimapButton",
 			ns.db,
 			Settings.VarType.Boolean,
-			"Show minimap button",
-			false
+			"Minimap Button",
+			true
 		)
 		minimapSetting:SetValueChangedCallback(function()
 			if ns.UpdateMinimapButton then
@@ -147,7 +163,7 @@ function ns.InitOptions()
 		Settings.CreateCheckbox(
 			category,
 			minimapSetting,
-			"Show a minimap button that opens these settings. Off by default."
+			"Button on the minimap. Opens settings. Ellesmere puts it with the other addon buttons."
 		)
 
 		if Settings.CreateSliderOptions and Settings.CreateSlider then
