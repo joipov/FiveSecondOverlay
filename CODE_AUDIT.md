@@ -125,3 +125,11 @@ SavedVariables are assigned on `_G.FiveSecondOverlayDB`. The addon compartment o
 Checked with luacheck (Lua 5.1, explicit globals). SavedVariables, slash commands, the compartment callback, and the named highlight and minimap frames are the globals this addon writes.
 
 `assets/` is release media for CurseForge and Wago. It is not loaded by the TOC, not shipped in the zip, and not part of this audit.
+
+## Practices (2026-10-10)
+
+Checked against the Joipov house style and against Warcraft Wiki secret values plus the Ketho WoW API library in `.luarc.json`.
+
+The event `if` ladder is a handler table. The same events are registered. `ADDON_LOADED` stays for the whole session so a later Ellesmere load can reattach. `OnUpdate` still runs only while the five-second highlight is up. `GetTime` is a local on that path.
+
+Left alone: when a cast arms the highlight, secret mana costs, and host-bar attach. CQ-002 is unchanged.

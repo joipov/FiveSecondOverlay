@@ -25,6 +25,7 @@ local hostRecheckAt = 0
 local hostAttached = false
 local watchingForeignAddons = true
 
+local GetTime = GetTime
 local issecretvalue = issecretvalue
 local canaccessvalue = canaccessvalue
 local issecrettable = issecrettable
@@ -438,54 +439,72 @@ local function ShouldReattachAddon(name)
 		or name == "EllesmereUI"
 end
 
+local function OnEnterWorld(isLogin)
+	if isLogin then
+		Print("Type |cffffffff/fso|r to open settings.")
+	end
+	TryAttach()
+	ScheduleAttachRetries()
+	if ns.CreateMinimapButton then
+		ns.CreateMinimapButton()
+	end
+	if not DB().enabled then
+		StopFSR()
+		UpdateDriverScript()
+	end
+end
+
+local handlers = {}
+
+function handlers.ADDON_LOADED(name)
+	if name == ADDON_NAME then
+		_G.FiveSecondOverlayDB = ns.LoadDB(_G.FiveSecondOverlayDB)
+		ns.db = _G.FiveSecondOverlayDB
+		if ns.InitOptions then
+			ns.InitOptions()
+		end
+		return
+	end
+	if watchingForeignAddons and ShouldReattachAddon(name) then
+		TryAttach()
+		ScheduleAttachRetries()
+	end
+end
+
+function handlers.PLAYER_LOGIN()
+	OnEnterWorld(true)
+end
+
+function handlers.PLAYER_ENTERING_WORLD()
+	OnEnterWorld(false)
+end
+
+function handlers.UNIT_DISPLAYPOWER()
+	if not IsManaPower() then
+		StopFSR()
+		UpdateDriverScript()
+	end
+end
+
+function handlers.UNIT_SPELLCAST_SUCCEEDED(unit, ...)
+	OnPlayerCast(nil, "UNIT_SPELLCAST_SUCCEEDED", unit, ...)
+end
+
+function handlers.UNIT_SPELLCAST_CHANNEL_START(unit, ...)
+	OnPlayerCast(nil, "UNIT_SPELLCAST_CHANNEL_START", unit, ...)
+end
+
 driver:RegisterEvent("ADDON_LOADED")
 driver:RegisterEvent("PLAYER_LOGIN")
 driver:RegisterEvent("PLAYER_ENTERING_WORLD")
 driver:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
 driver:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", "player")
 driver:RegisterUnitEvent("UNIT_DISPLAYPOWER", "player")
-driver:SetScript("OnEvent", function(self, event, arg1, ...)
-	if event == "ADDON_LOADED" then
-		if arg1 == ADDON_NAME then
-			_G.FiveSecondOverlayDB = ns.LoadDB(_G.FiveSecondOverlayDB)
-			ns.db = _G.FiveSecondOverlayDB
-			if ns.InitOptions then
-				ns.InitOptions()
-			end
-			return
-		end
-		if watchingForeignAddons and ShouldReattachAddon(arg1) then
-			TryAttach()
-			ScheduleAttachRetries()
-		end
-		return
+driver:SetScript("OnEvent", function(_, event, arg1, ...)
+	local handler = handlers[event]
+	if handler then
+		handler(arg1, ...)
 	end
-
-	if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
-		if event == "PLAYER_LOGIN" then
-			Print("Type |cffffffff/fso|r to open settings.")
-		end
-		TryAttach()
-		ScheduleAttachRetries()
-		if ns.CreateMinimapButton then
-			ns.CreateMinimapButton()
-		end
-		if not DB().enabled then
-			StopFSR()
-			UpdateDriverScript()
-		end
-		return
-	end
-
-	if event == "UNIT_DISPLAYPOWER" then
-		if not IsManaPower() then
-			StopFSR()
-			UpdateDriverScript()
-		end
-		return
-	end
-
-	OnPlayerCast(self, event, arg1, ...)
 end)
 
 function ns.SetEnabled(on)
