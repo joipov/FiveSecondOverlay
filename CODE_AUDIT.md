@@ -117,3 +117,11 @@ Run after `/reload` with EllesmereUI Resource Bars enabled:
 ## CQ-002 follow-up (only if highlight never arms in combat)
 
 If Forever secrets all power costs in combat, add a guarded debug print of `SpellCostsMana` results — do not blindly treat `nil` as a spend.
+
+## 1.5.4 alignment
+
+SavedVariables are assigned on `_G.FiveSecondOverlayDB`. The addon compartment opens settings. The highlight is unchanged.
+
+Checked with luacheck (Lua 5.1, explicit globals). SavedVariables, slash commands, the compartment callback, and the named highlight and minimap frames are the globals this addon writes.
+
+`assets/` is release media for CurseForge and Wago. It is not loaded by the TOC, not shipped in the zip, and not part of this audit.

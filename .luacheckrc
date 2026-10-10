@@ -6,10 +6,12 @@ self = false
 exclude_files = {
 	".release/",
 	".annotations/",
+	"assets/",
 }
 
 globals = {
 	"FiveSecondOverlayDB",
+	"FiveSecondOverlay_OnAddonCompartmentClick",
 	"FiveSecondOverlayHighlight",
 	"FiveSecondOverlayMinimapButton",
 	"SLASH_FSO1",
@@ -47,6 +49,4 @@ read_globals = {
 	"EllesmereUIUnitFrames_Player",
 	"ERB_PrimaryBar",
 	"print",
-	"JoipovAddons_RegisterHint",
-	"JoipovAddons_Print",
 }

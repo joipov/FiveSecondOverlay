@@ -33,7 +33,7 @@ local canaccesstable = canaccesstable
 local OnUpdate
 
 local function Print(msg)
-	JoipovAddons_Print("Five Second Overlay", msg)
+	print("|cffc4b5fdJoipov|r Five Second Overlay: " .. tostring(msg or ""))
 end
 
 ns.Print = Print
@@ -447,8 +447,8 @@ driver:RegisterUnitEvent("UNIT_DISPLAYPOWER", "player")
 driver:SetScript("OnEvent", function(self, event, arg1, ...)
 	if event == "ADDON_LOADED" then
 		if arg1 == ADDON_NAME then
-			FiveSecondOverlayDB = ns.LoadDB(FiveSecondOverlayDB)
-			ns.db = FiveSecondOverlayDB
+			_G.FiveSecondOverlayDB = ns.LoadDB(_G.FiveSecondOverlayDB)
+			ns.db = _G.FiveSecondOverlayDB
 			if ns.InitOptions then
 				ns.InitOptions()
 			end
@@ -462,6 +462,9 @@ driver:SetScript("OnEvent", function(self, event, arg1, ...)
 	end
 
 	if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
+		if event == "PLAYER_LOGIN" then
+			Print("Type |cffffffff/fso|r to open settings.")
+		end
 		TryAttach()
 		ScheduleAttachRetries()
 		if ns.CreateMinimapButton then

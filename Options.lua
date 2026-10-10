@@ -99,6 +99,10 @@ function ns.OpenSettings()
 	Settings.OpenToCategory(ns.settingsCategory:GetID())
 end
 
+function _G.FiveSecondOverlay_OnAddonCompartmentClick()
+	ns.OpenSettings()
+end
+
 function ns.InitOptions()
 	if ns.settingsCategory or not ns.db or not Settings then
 		return
@@ -216,8 +220,4 @@ _G.SLASH_FSO1 = "/fso"
 _G.SLASH_FSO2 = "/fivesecond"
 _G.SlashCmdList.FSO = function()
 	ns.OpenSettings()
-end
-
-if JoipovAddons_RegisterHint then
-	JoipovAddons_RegisterHint("Five Second Overlay", "/fso")
 end

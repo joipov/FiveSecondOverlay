@@ -1,14 +1,16 @@
 ## Interface: 16001
 ## Title: |cffc4b5fdJoipov|r Five Second Overlay
 ## Notes: Subtle 5-second rule highlight on your player mana bar.
-## Author: FiveSecondOverlay
-## Version: 1.5.3
+## Author: Joipov
+## Version: 1.5.5
+## Category: Unit Frames
 ## SavedVariables: FiveSecondOverlayDB
 ## OptionalDeps: EllesmereUIResourceBars, EllesmereUIUnitFrames, LibStub, LibDataBroker-1.1, LibDBIcon-1.0
 ## IconTexture: Interface\Icons\Spell_Holy_MagicalSentry
+## AddonCompartmentFunc: FiveSecondOverlay_OnAddonCompartmentClick
+## X-License: All Rights Reserved
+## X-Website: https://github.com/joipov/FiveSecondOverlay
 ## AllowLoadGameType: camelot
-## Group: JoipovAddons
-## Dependencies: JoipovAddons
 
 Database.lua
 Core.lua

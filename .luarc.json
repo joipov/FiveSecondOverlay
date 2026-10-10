@@ -17,15 +17,15 @@
     "C:/Users/rubin/.cursor/extensions/ketho.wow-api/Annotations/Core"
   ],
   "workspace.ignoreDir": [
-    ".release"
+    ".release",
+    "assets"
   ],
   "workspace.checkThirdParty": false,
   "diagnostics.globals": [
     "SLASH_FSO1",
     "SLASH_FSO2",
-    "JoipovAddons_RegisterHint",
-    "JoipovAddons_Print",
     "FiveSecondOverlayDB",
+    "FiveSecondOverlay_OnAddonCompartmentClick",
     "FiveSecondOverlayHighlight",
     "FiveSecondOverlayMinimapButton",
     "CreateSettingsButtonInitializer"
