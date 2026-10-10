@@ -7,6 +7,7 @@ Five Second Overlay loads on its own. Chat lines no longer go through another ad
 ### Changed
 
 - Chat lines are printed by this addon. One login line tells you `/fso`.
+- The addon list groups this under Joipov Tools. The list name has no Joipov prefix.
 
 ## 1.5.4
 

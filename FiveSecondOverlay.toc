@@ -1,9 +1,9 @@
 ## Interface: 16001
-## Title: |cffc4b5fdJoipov|r Five Second Overlay
+## Title: Five Second Overlay
 ## Notes: Subtle 5-second rule highlight on your player mana bar.
 ## Author: Joipov
 ## Version: 1.5.5
-## Category: Unit Frames
+## Category: |cffc4b5fdJoipov|r Tools
 ## SavedVariables: FiveSecondOverlayDB
 ## OptionalDeps: EllesmereUIResourceBars, EllesmereUIUnitFrames, LibStub, LibDataBroker-1.1, LibDBIcon-1.0
 ## IconTexture: Interface\Icons\Spell_Holy_MagicalSentry
