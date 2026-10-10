@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.7
+
+Settings use the same wording as the other Joipov addons.
+
+### Changed
+
+- **Enable Five Second Overlay**, **Minimap button**, **Highlight opacity**, **Edge gap**, and **Highlight color** use the shared labels.
+- The other rows grey out while the addon is off.
+
 ## 1.5.6
 
 The minimap button is on by default, including saves that still had it off.

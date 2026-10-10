@@ -60,15 +60,17 @@ local function AddColorButton(category, tooltip)
 	if not (layout and layout.AddInitializer) then
 		return
 	end
-	layout:AddInitializer(CreateSettingsButtonInitializer(
-		"Overlay color",
-		"Pick color",
+	local initializer = CreateSettingsButtonInitializer(
+		"Highlight color",
+		"Choose color",
 		function()
 			ns.OpenColorPicker()
 		end,
 		tooltip,
 		true
-	))
+	)
+	layout:AddInitializer(initializer)
+	return initializer
 end
 
 function ns.SetAlpha(a)
@@ -93,7 +95,7 @@ function ns.OpenSettings()
 		ns.InitOptions()
 	end
 	if not ns.settingsCategory then
-		ns.Print("Settings UI unavailable.")
+		ns.Print("Couldn't open settings.")
 		return
 	end
 	Settings.OpenToCategory(ns.settingsCategory:GetID())
@@ -124,7 +126,7 @@ function ns.InitOptions()
 		return
 	end
 
-	local ok, err = pcall(function()
+	local ok = pcall(function()
 		local category = Settings.RegisterVerticalLayoutCategory("Five Second Overlay")
 		ns.settingsCategory = category
 
@@ -134,16 +136,16 @@ function ns.InitOptions()
 			"enabled",
 			ns.db,
 			Settings.VarType.Boolean,
-			"Enable overlay",
+			"Enable Five Second Overlay",
 			true
 		)
 		enableSetting:SetValueChangedCallback(function()
 			ns.SetEnabled(ns.db.enabled)
 		end)
-		Settings.CreateCheckbox(
+		local enableCheckbox = Settings.CreateCheckbox(
 			category,
 			enableSetting,
-			"Show the subtle 5-second rule highlight on your mana bar."
+			"Highlight on your mana bar during the 5-second rule. It shrinks from the right."
 		)
 
 		local minimapSetting = Settings.RegisterAddOnSetting(
@@ -152,7 +154,7 @@ function ns.InitOptions()
 			"showMinimapButton",
 			ns.db,
 			Settings.VarType.Boolean,
-			"Minimap Button",
+			"Minimap button",
 			true
 		)
 		minimapSetting:SetValueChangedCallback(function()
@@ -160,12 +162,14 @@ function ns.InitOptions()
 				ns.UpdateMinimapButton()
 			end
 		end)
-		Settings.CreateCheckbox(
+		local minimapCheckbox = Settings.CreateCheckbox(
 			category,
 			minimapSetting,
 			"Button on the minimap. Opens settings. Ellesmere puts it with the other addon buttons."
 		)
 
+		local alphaSlider
+		local insetSlider
 		if Settings.CreateSliderOptions and Settings.CreateSlider then
 			local alphaSetting = Settings.RegisterAddOnSetting(
 				category,
@@ -185,7 +189,7 @@ function ns.InitOptions()
 					return string.format("%.0f%%", value * 100)
 				end)
 			end
-			Settings.CreateSlider(category, alphaSetting, alphaOpts, "How strong the mana-bar highlight appears.")
+			alphaSlider = Settings.CreateSlider(category, alphaSetting, alphaOpts, "How strong the highlight is.")
 
 			local insetSetting = Settings.RegisterAddOnSetting(
 				category,
@@ -193,7 +197,7 @@ function ns.InitOptions()
 				"inset",
 				ns.db,
 				Settings.VarType.Number,
-				"Inside padding",
+				"Edge gap",
 				1
 			)
 			insetSetting:SetValueChangedCallback(function()
@@ -213,22 +217,35 @@ function ns.InitOptions()
 					return tostring(math.floor(value + 0.5)) .. " px"
 				end)
 			end
-			Settings.CreateSlider(
+			insetSlider = Settings.CreateSlider(
 				category,
 				insetSetting,
 				insetOpts,
-				"Shrinks the highlight inside the mana bar on all sides (keeps it off the 1px border; higher = shorter)."
+				"Space between the highlight and the edge of the bar."
 			)
 		end
 
-		AddColorButton(category, "Color of the mana-bar highlight. Default is white. It shrinks from the right toward the left.")
+		local colorButton = AddColorButton(category, "Color of the highlight. White is the default.")
+
+		local function MasterEnabled()
+			return enableSetting:GetValue()
+		end
+		local function Parent(child)
+			if child then
+				child:SetParentInitializer(enableCheckbox, MasterEnabled)
+			end
+		end
+		Parent(minimapCheckbox)
+		Parent(alphaSlider)
+		Parent(insetSlider)
+		Parent(colorButton)
 
 		Settings.RegisterAddOnCategory(category)
 	end)
 
 	if not ok then
 		ns.settingsCategory = nil
-		ns.Print("options panel failed: " .. tostring(err))
+		ns.Print("Couldn't open settings.")
 	end
 end
 
