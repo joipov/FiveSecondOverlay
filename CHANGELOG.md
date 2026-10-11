@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.6.0
+
+House-style pass. Same highlight, cleaner internals.
+
+### Changed
+
+- Wand shots and auto-repeat are detected through `C_Spell.IsAutoRepeatSpell` instead of spell names, so the check works on every locale.
+- The minimap position is stored in LibDBIcon's own table, so dragging the button with LibDBIcon keeps its place, and the built-in button uses the same value.
+- The addon loads only on the `forever` game type.
+- Modules export only what another file reads.
+
+### Removed
+
+- The unused `ns.TryAttach`, `ns.StartOrReset`, `ns.StopOverlay`, `ns.IsActive`, and `ns.ApplyAppearance` exports.
+
 ## 1.5.7
 
 Settings use the same wording as the other Joipov addons.

@@ -1,4 +1,4 @@
--- Lua 5.1, explicit WoW globals. Modeled on HealPerMana / GatherSkillTooltip.
+-- Lua 5.1, explicit WoW globals. Same layout in every Joipov addon.
 std = "lua51"
 max_line_length = false
 self = false
@@ -9,22 +9,20 @@ exclude_files = {
 	"assets/",
 }
 
+-- Globals this addon writes. It writes them through _G, so luacheck does not
+-- require them; the list documents intent and catches accidental renames.
 globals = {
 	"FiveSecondOverlayDB",
-	"FiveSecondOverlay_OnAddonCompartmentClick",
-	"FiveSecondOverlay_OnAddonCompartmentEnter",
-	"FiveSecondOverlay_OnAddonCompartmentLeave",
 	"FiveSecondOverlayHighlight",
 	"SLASH_FSO1",
 	"SLASH_FSO2",
 	SlashCmdList = { fields = { "FSO" } },
 }
 
+-- WoW globals this addon reads. Anything else is an error.
 read_globals = {
 	"issecretvalue",
 	"canaccessvalue",
-	"issecrettable",
-	"canaccesstable",
 
 	"C_Spell",
 	"C_Timer",
@@ -33,21 +31,17 @@ read_globals = {
 
 	"CreateFrame",
 	"GetTime",
-	"GetCursorPosition",
 	"UnitPowerType",
-	"UnitGUID",
-	"IsAutoRepeatSpell",
+
+	"GameTooltip",
+	"GetCursorPosition",
+	"Minimap",
+
 	"Settings",
 	"SettingsPanel",
-	"CreateSettingsButtonInitializer",
 	"ColorPickerFrame",
-	"GameTooltip",
-	"Minimap",
+	"CreateSettingsButtonInitializer",
 	"MinimalSliderWithSteppersMixin",
-	"UIParent",
-	"PlayerFrame",
-	"PlayerFrameManaBar",
-	"EllesmereUIUnitFrames_Player",
-	"ERB_PrimaryBar",
+
 	"print",
 }

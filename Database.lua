@@ -1,16 +1,15 @@
 local _, ns = ...
 
--- SavedVariables: defaults, migrations, validation.
--- Plain Lua so logic stays testable without a client.
+-- Saved variables: defaults, migrations, validation. Plain Lua, so the tests
+-- can load it without a client.
 
-local DB_VERSION = 7
+local DB_VERSION = 8
+local MINIMAP_POS = 220
 
--- Scalar defaults only. Tables are constructed fresh in EnsureTables.
--- The highlight stays white and shrinks from the right toward the left.
+-- Scalars only. Tables are built fresh in EnsureTables.
 local defaults = {
 	enabled = true,
 	showMinimapButton = true,
-	minimapAngle = 220,
 	a = 0.35,
 	inset = 1,
 	r = 1,
@@ -19,7 +18,7 @@ local defaults = {
 }
 
 local function ClampNumber(value, lo, hi, fallback)
-	if type(value) ~= "number" then
+	if type(value) ~= "number" or value ~= value then
 		return fallback
 	end
 	if value < lo then
@@ -35,6 +34,7 @@ local function EnsureTables(db)
 	if type(db.minimapIcon) ~= "table" then
 		db.minimapIcon = {}
 	end
+	db.minimapIcon.minimapPos = ClampNumber(db.minimapIcon.minimapPos, 0, 360, MINIMAP_POS)
 end
 
 local function CopyDefaults(db)
@@ -44,37 +44,32 @@ local function CopyDefaults(db)
 		end
 	end
 	EnsureTables(db)
-	return db
 end
 
 local function Validate(db)
-	db.enabled = db.enabled ~= false
-	db.showMinimapButton = db.showMinimapButton == true
 	db.a = ClampNumber(db.a, 0.05, 0.60, defaults.a)
 	db.r = ClampNumber(db.r, 0, 1, defaults.r)
 	db.g = ClampNumber(db.g, 0, 1, defaults.g)
 	db.b = ClampNumber(db.b, 0, 1, defaults.b)
-	db.inset = ClampNumber(db.inset, 0, 4, defaults.inset)
-	db.inset = math.floor(db.inset + 0.5)
-	db.minimapAngle = ClampNumber(db.minimapAngle, -360, 360, defaults.minimapAngle)
-	EnsureTables(db)
+	db.inset = math.floor(ClampNumber(db.inset, 0, 4, defaults.inset) + 0.5)
+end
+
+local function Near(value, target)
+	return type(value) == "number" and math.abs(value - target) < 0.02
 end
 
 local function MigrateDB(db)
 	local version = type(db.version) == "number" and db.version or 0
 	if version < 2 then
-		-- Former one-shot: bump very faint default alpha once.
+		-- Bump the very faint first default once. Those builds stored a color
+		-- they never drew, so drop it.
 		if db.a == 0.22 then
 			db.a = defaults.a
 		end
-		-- Those builds stored color but never applied it. Drop it so later
-		-- defaults apply instead of a stale unused value.
-		db.r = nil
-		db.g = nil
-		db.b = nil
+		db.r, db.g, db.b = nil, nil, nil
 	end
 	if version < 3 then
-		-- Highlight inside borders: previous default inset was 0 (covered 1px outlines).
+		-- The old default inset of 0 covered the bar's 1 px border.
 		if db.inset == nil or db.inset == 0 then
 			db.inset = defaults.inset
 		end
@@ -83,34 +78,38 @@ local function MigrateDB(db)
 		db.regenTimer = nil
 	end
 	if version < 6 then
-		-- Version 5 defaulted to light blue. White is the default again.
-		-- A color the user picked is left alone.
-		local oldBlue = type(db.r) == "number" and type(db.g) == "number" and type(db.b) == "number"
-			and math.abs(db.r - 0.70) < 0.02
-			and math.abs(db.g - 0.88) < 0.02
-			and math.abs(db.b - 1) < 0.02
-		if db.r == nil or oldBlue then
-			db.r = nil
-			db.g = nil
-			db.b = nil
+		-- Version 5 defaulted to light blue. White is the default again; a
+		-- color the user picked stays.
+		if db.r == nil or (Near(db.r, 0.70) and Near(db.g, 0.88) and Near(db.b, 1)) then
+			db.r, db.g, db.b = nil, nil, nil
 		end
 	end
 	if version < 7 then
-		-- The button used to default off, and that false was written into
-		-- saved variables. Turn it on once. A later choice stays put.
+		-- The button used to default off and that false was saved. Turn it on
+		-- once; a later choice stays.
 		db.showMinimapButton = true
+	end
+	if version < 8 then
+		-- The built-in button kept its own angle. LibDBIcon's table holds it now.
+		if type(db.minimapIcon) ~= "table" then
+			db.minimapIcon = {}
+		end
+		if type(db.minimapIcon.minimapPos) ~= "number" and type(db.minimapAngle) == "number" then
+			db.minimapIcon.minimapPos = db.minimapAngle % 360
+		end
+		db.minimapAngle = nil
 	end
 	db.version = DB_VERSION
 end
 
 function ns.LoadDB(saved)
-	local db = type(saved) == "table" and saved or {}
+	ns.firstRun = type(saved) ~= "table"
+	local db = ns.firstRun and {} or saved
 	MigrateDB(db)
 	CopyDefaults(db)
 	Validate(db)
 	return db
 end
 
-ns.DB_DEFAULTS = defaults
-ns.DB_VERSION = DB_VERSION
 ns.defaults = defaults
+ns.DB_VERSION = DB_VERSION

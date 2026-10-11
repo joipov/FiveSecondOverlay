@@ -2,7 +2,7 @@
 ## Title: Five Second Overlay
 ## Notes: Subtle 5-second rule highlight on your player mana bar.
 ## Author: Joipov
-## Version: 1.5.7
+## Version: 1.6.0
 ## Category: |cffc4b5fdJoipov|r Tools
 ## SavedVariables: FiveSecondOverlayDB
 ## OptionalDeps: EllesmereUIResourceBars, EllesmereUIUnitFrames, LibStub, LibDataBroker-1.1, LibDBIcon-1.0
@@ -12,7 +12,8 @@
 ## AddonCompartmentFuncOnLeave: FiveSecondOverlay_OnAddonCompartmentLeave
 ## X-License: MIT
 ## X-Website: https://github.com/joipov/FiveSecondOverlay
-## AllowLoadGameType: camelot
+## AllowLoadGameType: forever
+## ExcludeLoadGameType: standard, classic
 
 Database.lua
 Core.lua

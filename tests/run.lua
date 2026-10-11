@@ -1,8 +1,7 @@
--- Unit tests for the pure parts of Five Second Overlay.
+-- Unit tests for the client-free part of Five Second Overlay.
 --   luajit tests/run.lua
 --   lua5.1 tests/run.lua
--- Files that create frames (Core.lua, Options.lua, MinimapButton.lua) are not
--- loaded. Database.lua is plain Lua.
+-- Only Database.lua is loaded; the other files create frames.
 
 local root = (arg and arg[0] or "tests/run.lua"):match("^(.*)[/\\]tests[/\\]") or "."
 
@@ -33,8 +32,9 @@ local function test(name, fn)
 	end
 end
 
-test("LoadDB fills defaults", function()
+test("LoadDB fills defaults and reports a first run", function()
 	local db = ns.LoadDB(nil)
+	eq(ns.firstRun, true, "firstRun")
 	eq(db.enabled, true, "enabled")
 	eq(db.showMinimapButton, true, "showMinimapButton")
 	eq(db.a, 0.35, "a")
@@ -43,18 +43,26 @@ test("LoadDB fills defaults", function()
 	eq(db.g, 1, "g")
 	eq(db.b, 1, "b")
 	eq(db.version, ns.DB_VERSION, "version")
-	eq(type(db.minimapIcon), "table", "minimapIcon")
+	eq(db.minimapIcon.minimapPos, 220, "minimapPos")
+end)
+
+test("LoadDB reports an existing save", function()
+	ns.LoadDB({})
+	eq(ns.firstRun, false, "firstRun")
 end)
 
 test("LoadDB keeps an explicit disabled state", function()
-	local db = ns.LoadDB({ enabled = false })
-	eq(db.enabled, false)
+	eq(ns.LoadDB({ enabled = false }).enabled, false)
 end)
 
 test("LoadDB clamps opacity and inset", function()
 	local db = ns.LoadDB({ a = 2, inset = 9 })
 	eq(db.a, 0.60, "a")
 	eq(db.inset, 4, "inset")
+end)
+
+test("LoadDB clamps the minimap position", function()
+	eq(ns.LoadDB({ minimapIcon = { minimapPos = 400 } }).minimapIcon.minimapPos, 360, "minimapPos")
 end)
 
 test("LoadDB migrates the old faint alpha and stale color", function()
@@ -66,13 +74,17 @@ test("LoadDB migrates the old faint alpha and stale color", function()
 end)
 
 test("LoadDB turns the minimap button on once for old saves", function()
-	local db = ns.LoadDB({ version = 6, showMinimapButton = false })
-	eq(db.showMinimapButton, true)
+	eq(ns.LoadDB({ version = 6, showMinimapButton = false }).showMinimapButton, true)
 end)
 
 test("LoadDB keeps a current minimap choice", function()
-	local db = ns.LoadDB({ version = ns.DB_VERSION, showMinimapButton = false })
-	eq(db.showMinimapButton, false)
+	eq(ns.LoadDB({ version = ns.DB_VERSION, showMinimapButton = false }).showMinimapButton, false)
+end)
+
+test("LoadDB moves minimapAngle into minimapIcon", function()
+	local db = ns.LoadDB({ version = 7, minimapAngle = 190 })
+	eq(db.minimapIcon.minimapPos, 190, "minimapPos")
+	eq(db.minimapAngle, nil, "minimapAngle")
 end)
 
 if failed > 0 then

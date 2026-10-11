@@ -1,11 +1,12 @@
 --[[
-  FiveSecondOverlay — subtle Classic 5-second-rule highlight on the player mana bar.
+  Five Second Overlay — a subtle 5-second-rule highlight on the player mana bar.
 
-  Prefer EllesmereUI Resource Bars (ERB_PrimaryBar). Fall back to unit-frame Power,
-  then Blizzard.
+  The highlight starts when a mana spell finishes, or when a channel begins. A
+  cast that is still winding up does not start it. It shrinks from the right
+  toward the left over five seconds, then clears.
 
-  The highlight starts when a mana spell successfully completes (or a channel
-  begins), not when a cast-time spell starts.
+  Host, in order: EllesmereUI Resource Bars (ERB_PrimaryBar), the Ellesmere
+  unit-frame power bar, the default player mana bar.
 ]]
 
 local ADDON_NAME, ns = ...
@@ -13,64 +14,47 @@ local ADDON_NAME, ns = ...
 local FSR_DURATION = 5
 local HOST_RECHECK_INTERVAL = 0.5
 
-local driver = CreateFrame("Frame")
+local GetTime = GetTime
+local C_Timer = C_Timer
+local C_Spell = C_Spell
+
+local frame = CreateFrame("Frame")
 local overlay
 local hostBar
 local hostOuter
 local lastSpend = 0
-local fsrActive = false
-local attachAttempts = 0
+local active = false
 local attachTicker
 local hostRecheckAt = 0
 local hostAttached = false
 local watchingForeignAddons = true
 
-local GetTime = GetTime
-local C_Timer = C_Timer
-local issecretvalue = issecretvalue
-local canaccessvalue = canaccessvalue
-local issecrettable = issecrettable
-local canaccesstable = canaccesstable
-
-local OnUpdate
-
-local function Print(msg)
-	print("|cffc4b5fdJoipov|r Five Second Overlay: " .. tostring(msg or ""))
+local function Print(message)
+	print("|cffc4b5fdJoipov|r Five Second Overlay: " .. tostring(message or ""))
 end
 
 ns.Print = Print
 
-local function DB()
-	return ns.db
-end
-
 local function SecretBlocked(value)
-	return issecretvalue and issecretvalue(value) and not (canaccessvalue and canaccessvalue(value))
-end
-
-local function CanIndex(value)
-	if value == nil or SecretBlocked(value) then
-		return false
-	end
-	if issecrettable and issecrettable(value) and not (canaccesstable and canaccesstable(value)) then
-		return false
-	end
-	return true
+	return issecretvalue(value) and not canaccessvalue(value)
 end
 
 local function ReadableNumber(value)
-	if type(value) ~= "number" or SecretBlocked(value) then
+	if SecretBlocked(value) then
+		return nil
+	end
+	if type(value) ~= "number" then
 		return nil
 	end
 	return value
 end
 
-local function FrameUsable(frame)
-	if not (frame and frame.GetWidth and frame.IsVisible) then
+local function FrameUsable(host)
+	if not (host and host.GetWidth and host.IsVisible) then
 		return false
 	end
-	local width = frame:GetWidth()
-	return width and width > 1 and frame:IsVisible()
+	local width = host:GetWidth()
+	return width > 1 and host:IsVisible()
 end
 
 local function IsManaPower()
@@ -78,39 +62,26 @@ local function IsManaPower()
 	if SecretBlocked(powerType) then
 		return true
 	end
-	local mana = Enum and Enum.PowerType and Enum.PowerType.Mana
-	if mana ~= nil then
-		return powerType == mana
-	end
-	return powerType == 0
+	return powerType == Enum.PowerType.Mana
 end
 
--- true / false / nil (nil = could not read cost — Forever secrets).
--- Only `true` arms the FSR (CQ-002: do not treat nil as a spend).
+-- true, false, or nil when the cost cannot be read (Forever secrets).
+-- Only true arms the highlight; nil is not treated as a spend.
 local function SpellCostsMana(spellID)
-	if not spellID or spellID == 0 then
-		return false
-	end
-	if SecretBlocked(spellID) then
-		return nil
-	end
-	if not (C_Spell and C_Spell.GetSpellPowerCost) then
+	if not spellID or spellID == 0 or SecretBlocked(spellID) then
 		return nil
 	end
 	local costs = C_Spell.GetSpellPowerCost(spellID)
-	if not CanIndex(costs) then
+	if SecretBlocked(costs) then
 		return nil
 	end
-	local manaType = Enum and Enum.PowerType and Enum.PowerType.Mana
-	local sawReadable = false
+	local mana = Enum.PowerType.Mana
 	for i = 1, #costs do
 		local entry = costs[i]
-		if CanIndex(entry) then
-			local costType = entry.type
+		if not SecretBlocked(entry) then
 			local cost = ReadableNumber(entry.cost)
-			if cost ~= nil then
-				sawReadable = true
-				if cost > 0 and (manaType == nil or SecretBlocked(costType) or costType == manaType) then
+			if cost then
+				if cost > 0 and entry.type == mana then
 					return true
 				end
 			elseif SecretBlocked(entry.cost) then
@@ -118,19 +89,15 @@ local function SpellCostsMana(spellID)
 			end
 		end
 	end
-	if sawReadable then
-		return false
-	end
-	return nil
+	return false
 end
 
--- Returns attachBar (fill / status bar), outerBar (for border raise).
+-- Returns the bar to attach to, and the bar whose border must be raised.
 local function ResolveHostBar()
 	local erb = _G.ERB_PrimaryBar
 	if FrameUsable(erb) then
-		local attach = erb._sb
-		if FrameUsable(attach) then
-			return attach, erb
+		if FrameUsable(erb._sb) then
+			return erb._sb, erb
 		end
 		return erb, erb
 	end
@@ -143,13 +110,13 @@ local function ResolveHostBar()
 	if FrameUsable(_G.PlayerFrameManaBar) then
 		return _G.PlayerFrameManaBar, _G.PlayerFrameManaBar
 	end
-	local pf = _G.PlayerFrame
-	if pf then
-		if FrameUsable(pf.manabar) then
-			return pf.manabar, pf.manabar
+	local player = _G.PlayerFrame
+	if player then
+		if FrameUsable(player.manabar) then
+			return player.manabar, player.manabar
 		end
-		if FrameUsable(pf.ManaBar) then
-			return pf.ManaBar, pf.ManaBar
+		if FrameUsable(player.ManaBar) then
+			return player.ManaBar, player.ManaBar
 		end
 	end
 
@@ -166,278 +133,176 @@ local function ApplyAppearance()
 	if not overlay then
 		return
 	end
-	local db = DB()
-	local r = (db and db.r) or 1
-	local g = (db and db.g) or 1
-	local b = (db and db.b) or 1
-	local a = (db and db.a) or 0.35
-	overlay.tex:SetColorTexture(r, g, b, a)
+	local db = ns.db
+	overlay.tex:SetColorTexture(db.r, db.g, db.b, db.a)
 end
 
-local function UpdateDriverScript()
-	if fsrActive then
-		driver:SetScript("OnUpdate", OnUpdate)
-	else
-		driver:SetScript("OnUpdate", nil)
-	end
-end
-
-local function EnsureOverlay(bar, outer)
-	outer = outer or bar
-	if overlay and hostBar == bar and hostOuter == outer then
-		overlay:SetFrameLevel(bar:GetFrameLevel() + 2)
-		RaiseHostBorder()
-		return overlay
-	end
-
-	if overlay then
-		overlay:Hide()
-		overlay:SetParent(bar)
-	else
-		overlay = CreateFrame("Frame", "FiveSecondOverlayHighlight", bar)
-		overlay:EnableMouse(false)
-		local tex = overlay:CreateTexture(nil, "OVERLAY", nil, 7)
-		tex:SetAllPoints(overlay)
-		tex:SetColorTexture(1, 1, 1, 1)
-		overlay.tex = tex
-	end
-
-	hostBar = bar
-	hostOuter = outer
-	if overlay:GetParent() ~= bar then
-		overlay:SetParent(bar)
-	end
-
-	overlay:SetFrameLevel(bar:GetFrameLevel() + 2)
-	RaiseHostBorder()
-
-	ApplyAppearance()
-	overlay:Hide()
-	return overlay
-end
-
-local function StopFSR()
-	fsrActive = false
-	if overlay then
-		overlay:Hide()
-	end
-end
-
-local function LayoutOverlay(remaining)
-	if not overlay or not hostBar then
-		return
-	end
-	local db = DB()
-	local inset = (db and db.inset) or 1
-	if inset < 0 then
-		inset = 0
-	end
+local function Layout(remaining)
+	local db = ns.db
+	local inset = db.inset
 	local width = hostBar:GetWidth()
-	if not width or width <= 0 then
+	if width <= 0 then
 		return
 	end
-
 	local frac = remaining / FSR_DURATION
 	if frac < 0 then
 		frac = 0
 	elseif frac > 1 then
 		frac = 1
 	end
-
-	local innerW = width - (inset * 2)
-	if innerW < 1 then
-		innerW = 1
-	end
-	local drawW = innerW * frac
+	local innerWidth = width - inset * 2
+	local drawWidth = innerWidth * frac
 
 	overlay:ClearAllPoints()
 	overlay:SetPoint("TOPLEFT", hostBar, "TOPLEFT", inset, -inset)
 	overlay:SetPoint("BOTTOMLEFT", hostBar, "BOTTOMLEFT", inset, inset)
-	overlay:SetWidth(math.max(drawW, 0.01))
-	if drawW > 0.5 and frac > 0 then
-		overlay:Show()
-		RaiseHostBorder()
-	else
-		overlay:Hide()
-	end
+	overlay:SetWidth(drawWidth > 0.5 and drawWidth or 0.01)
+	overlay:SetShown(frac > 0 and drawWidth > 0.5)
+	RaiseHostBorder()
 end
 
-local function MarkHostAttached(ok)
-	hostAttached = ok and true or false
-	if hostAttached then
-		watchingForeignAddons = false
+local function Stop()
+	active = false
+	if overlay then
+		overlay:Hide()
 	end
+	frame:SetScript("OnUpdate", nil)
+end
+
+local function EnsureOverlay(bar, outer)
+	outer = outer or bar
+	if overlay and hostBar == bar and hostOuter == outer then
+		return
+	end
+	if not overlay then
+		overlay = CreateFrame("Frame", "FiveSecondOverlayHighlight", bar)
+		overlay:EnableMouse(false)
+		local texture = overlay:CreateTexture(nil, "OVERLAY", nil, 7)
+		texture:SetAllPoints(overlay)
+		texture:SetColorTexture(1, 1, 1, 1)
+		overlay.tex = texture
+	elseif overlay:GetParent() ~= bar then
+		overlay:SetParent(bar)
+	end
+	hostBar = bar
+	hostOuter = outer
+	overlay:SetFrameLevel(bar:GetFrameLevel() + 2)
+	ApplyAppearance()
+	overlay:Hide()
+end
+
+local function MarkAttached()
+	hostAttached = true
+	watchingForeignAddons = false
 end
 
 local function TryAttach()
 	local bar, outer = ResolveHostBar()
-	if bar then
-		EnsureOverlay(bar, outer)
-		attachAttempts = 0
-		MarkHostAttached(true)
-		return true
+	if not bar then
+		return false
 	end
-	MarkHostAttached(false)
-	return false
+	EnsureOverlay(bar, outer)
+	MarkAttached()
+	return true
 end
 
-ns.TryAttach = TryAttach
-
-local function EnsureHostForUpdate(now)
+local function EnsureHost(now)
 	if hostBar and FrameUsable(hostBar) then
 		if now < hostRecheckAt then
 			return true
 		end
 		hostRecheckAt = now + HOST_RECHECK_INTERVAL
 		local bar, outer = ResolveHostBar()
-		if bar and bar == hostBar then
-			return true
-		end
-		if bar then
+		if bar and bar ~= hostBar then
 			EnsureOverlay(bar, outer)
-			MarkHostAttached(true)
-			return true
 		end
-		return false
+		return bar ~= nil
 	end
-
 	local bar, outer = ResolveHostBar()
 	if not bar then
 		return false
 	end
 	EnsureOverlay(bar, outer)
-	MarkHostAttached(true)
+	MarkAttached()
 	hostRecheckAt = now + HOST_RECHECK_INTERVAL
 	return true
 end
 
-OnUpdate = function()
-	local db = DB()
-	if not db or not db.enabled then
-		StopFSR()
-		driver:SetScript("OnUpdate", nil)
+local function OnUpdate()
+	if not ns.db.enabled then
+		Stop()
 		return
 	end
-
 	local now = GetTime()
-	if not EnsureHostForUpdate(now) then
+	if not EnsureHost(now) then
 		return
 	end
-
-	if fsrActive then
-		if not IsManaPower() then
-			StopFSR()
-			UpdateDriverScript()
-		else
-			local remaining = FSR_DURATION - (now - lastSpend)
-			if remaining <= 0 then
-				StopFSR()
-				UpdateDriverScript()
-			else
-				LayoutOverlay(remaining)
-			end
-		end
-	end
-end
-
-local function StartOrReset()
-	local db = DB()
-	if not db or not db.enabled then
+	if not active then
 		return
 	end
 	if not IsManaPower() then
+		Stop()
 		return
 	end
+	local remaining = FSR_DURATION - (now - lastSpend)
+	if remaining <= 0 then
+		Stop()
+		return
+	end
+	Layout(remaining)
+end
 
+local function StartOrReset()
+	if not ns.db.enabled or not IsManaPower() then
+		return
+	end
 	local bar, outer = ResolveHostBar()
 	if not bar then
 		return
 	end
-
 	EnsureOverlay(bar, outer)
-	MarkHostAttached(true)
+	MarkAttached()
 	lastSpend = GetTime()
-	fsrActive = true
-	LayoutOverlay(FSR_DURATION)
-	UpdateDriverScript()
-end
-
-ns.StartOrReset = StartOrReset
-ns.StopOverlay = function()
-	StopFSR()
-	UpdateDriverScript()
-end
-ns.ApplyAppearance = ApplyAppearance
-ns.IsActive = function()
-	return fsrActive
-end
-
-local function IsWandOrAutoRepeat(spellID)
-	if spellID and IsAutoRepeatSpell and IsAutoRepeatSpell(spellID) then
-		return true
-	end
-	if spellID and C_Spell and C_Spell.GetSpellName then
-		local name = C_Spell.GetSpellName(spellID)
-		if type(name) == "string" and not SecretBlocked(name) then
-			if name == "Shoot"
-				or name == "Schießen"
-				or name == "Tir"
-				or name == "Disparo"
-				or name == "Tiro"
-				or name == "射击"
-				or name == "射擊" then
-				return true
-			end
-		end
-	end
-	return false
-end
-
-local function OnPlayerCast(_, event, unit, _, spellID)
-	if unit ~= "player" then
-		return
-	end
-	if event ~= "UNIT_SPELLCAST_SUCCEEDED" and event ~= "UNIT_SPELLCAST_CHANNEL_START" then
-		return
-	end
-
-	if IsWandOrAutoRepeat(spellID) then
-		return
-	end
-
-	if SpellCostsMana(spellID) == true then
-		StartOrReset()
-	end
+	active = true
+	Layout(FSR_DURATION)
+	frame:SetScript("OnUpdate", OnUpdate)
 end
 
 local function ScheduleAttachRetries()
 	if hostAttached and hostBar and FrameUsable(hostBar) then
 		return
 	end
-	attachAttempts = 0
 	if attachTicker then
 		attachTicker:Cancel()
 		attachTicker = nil
 	end
-	if not C_Timer or not C_Timer.NewTicker then
-		TryAttach()
-		return
-	end
+	-- EllesmereUI may load after us; retry for a few seconds.
+	local attempts = 0
 	attachTicker = C_Timer.NewTicker(0.5, function()
-		attachAttempts = attachAttempts + 1
-		if TryAttach() or attachAttempts >= 30 then
-			if attachTicker then
-				attachTicker:Cancel()
-				attachTicker = nil
-			end
+		attempts = attempts + 1
+		if TryAttach() or attempts >= 30 then
+			attachTicker:Cancel()
+			attachTicker = nil
 		end
 	end)
 end
 
-local function ShouldReattachAddon(name)
+local function ShouldReattach(name)
 	return name == "EllesmereUIResourceBars"
 		or name == "EllesmereUIUnitFrames"
 		or name == "EllesmereUI"
+end
+
+local function OnPlayerCast(unit, spellID)
+	if unit ~= "player" then
+		return
+	end
+	if C_Spell.IsAutoRepeatSpell(spellID) then
+		return
+	end
+	if SpellCostsMana(spellID) == true then
+		StartOrReset()
+	end
 end
 
 local function OnEnterWorld(isLogin)
@@ -446,12 +311,9 @@ local function OnEnterWorld(isLogin)
 	end
 	TryAttach()
 	ScheduleAttachRetries()
-	if ns.CreateMinimapButton then
-		ns.CreateMinimapButton()
-	end
-	if not DB().enabled then
-		StopFSR()
-		UpdateDriverScript()
+	ns.CreateMinimapButton()
+	if not ns.db.enabled then
+		Stop()
 	end
 end
 
@@ -461,12 +323,10 @@ function handlers.ADDON_LOADED(name)
 	if name == ADDON_NAME then
 		_G.FiveSecondOverlayDB = ns.LoadDB(_G.FiveSecondOverlayDB)
 		ns.db = _G.FiveSecondOverlayDB
-		if ns.InitOptions then
-			ns.InitOptions()
-		end
+		ns.InitOptions()
 		return
 	end
-	if watchingForeignAddons and ShouldReattachAddon(name) then
+	if watchingForeignAddons and ShouldReattach(name) then
 		TryAttach()
 		ScheduleAttachRetries()
 	end
@@ -480,55 +340,44 @@ function handlers.PLAYER_ENTERING_WORLD()
 	OnEnterWorld(false)
 end
 
-function handlers.UNIT_DISPLAYPOWER()
+handlers.UNIT_DISPLAYPOWER = function()
 	if not IsManaPower() then
-		StopFSR()
-		UpdateDriverScript()
+		Stop()
 	end
 end
 
-function handlers.UNIT_SPELLCAST_SUCCEEDED(unit, ...)
-	OnPlayerCast(nil, "UNIT_SPELLCAST_SUCCEEDED", unit, ...)
+handlers.UNIT_SPELLCAST_SUCCEEDED = function(unit, _, spellID)
+	OnPlayerCast(unit, spellID)
 end
 
-function handlers.UNIT_SPELLCAST_CHANNEL_START(unit, ...)
-	OnPlayerCast(nil, "UNIT_SPELLCAST_CHANNEL_START", unit, ...)
+handlers.UNIT_SPELLCAST_CHANNEL_START = function(unit, _, spellID)
+	OnPlayerCast(unit, spellID)
 end
 
-driver:RegisterEvent("ADDON_LOADED")
-driver:RegisterEvent("PLAYER_LOGIN")
-driver:RegisterEvent("PLAYER_ENTERING_WORLD")
-driver:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
-driver:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", "player")
-driver:RegisterUnitEvent("UNIT_DISPLAYPOWER", "player")
-driver:SetScript("OnEvent", function(_, event, arg1, ...)
-	local handler = handlers[event]
-	if handler then
-		handler(arg1, ...)
-	end
+frame:SetScript("OnEvent", function(_, event, ...)
+	handlers[event](...)
 end)
+frame:RegisterEvent("ADDON_LOADED")
+frame:RegisterEvent("PLAYER_LOGIN")
+frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+frame:RegisterUnitEvent("UNIT_DISPLAYPOWER", "player")
+frame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
+frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", "player")
 
-function ns.SetEnabled(on)
-	local db = DB()
-	if not db then
-		return
-	end
-	db.enabled = on and true or false
-	if not db.enabled then
-		StopFSR()
-		UpdateDriverScript()
+function ns.SetEnabled()
+	if not ns.db.enabled then
+		Stop()
 	end
 end
 
 function ns.Refresh()
 	ApplyAppearance()
-	if fsrActive then
+	if active then
 		local remaining = FSR_DURATION - (GetTime() - lastSpend)
 		if remaining > 0 then
-			LayoutOverlay(remaining)
+			Layout(remaining)
 		else
-			StopFSR()
-			UpdateDriverScript()
+			Stop()
 		end
 	end
 end
