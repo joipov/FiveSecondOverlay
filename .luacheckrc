@@ -24,6 +24,7 @@ read_globals = {
 	"issecretvalue",
 	"canaccessvalue",
 
+	"C_AddOns",
 	"C_Spell",
 	"C_Timer",
 	"Enum",

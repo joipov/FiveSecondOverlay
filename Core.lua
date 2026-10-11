@@ -30,10 +30,18 @@ local hostAttached = false
 local watchingForeignAddons = true
 
 local function Print(message)
-	print("|cffc4b5fdJoipov|r Five Second Overlay: " .. tostring(message or ""))
+	print("|cff8b5cf6Joipov|r Five Second Overlay: " .. tostring(message or ""))
 end
 
 ns.Print = Print
+
+-- Login line: "Joipov Five Second Overlay (v1.6.0). Type /fso to open settings."
+-- Name and version come from the TOC, so they never drift.
+function ns.Welcome()
+	local title = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Title") or "Five Second Overlay"
+	local version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version") or "?"
+	print(string.format("|cff8b5cf6Joipov|r %s (|cff22d3eev%s|r). Type |cffffffff/fso|r to open settings.", title, version))
+end
 
 local function SecretBlocked(value)
 	return issecretvalue(value) and not canaccessvalue(value)
@@ -307,7 +315,7 @@ end
 
 local function OnEnterWorld(isLogin)
 	if isLogin then
-		Print("Type |cffffffff/fso|r to open settings.")
+		ns.Welcome()
 	end
 	TryAttach()
 	ScheduleAttachRetries()

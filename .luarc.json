@@ -23,6 +23,7 @@
   ],
   "workspace.checkThirdParty": false,
   "diagnostics.globals": [
+    "C_AddOns",
     "FiveSecondOverlayDB",
     "FiveSecondOverlayHighlight",
     "SLASH_FSO1",
