@@ -26,6 +26,7 @@ local hostAttached = false
 local watchingForeignAddons = true
 
 local GetTime = GetTime
+local C_Timer = C_Timer
 local issecretvalue = issecretvalue
 local canaccessvalue = canaccessvalue
 local issecrettable = issecrettable

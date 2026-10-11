@@ -18,21 +18,54 @@
   ],
   "workspace.ignoreDir": [
     ".release",
-    "assets"
+    "assets",
+    "tests"
   ],
   "workspace.checkThirdParty": false,
   "diagnostics.globals": [
-    "SLASH_FSO1",
-    "SLASH_FSO2",
     "FiveSecondOverlayDB",
     "FiveSecondOverlay_OnAddonCompartmentClick",
+    "FiveSecondOverlay_OnAddonCompartmentEnter",
+    "FiveSecondOverlay_OnAddonCompartmentLeave",
     "FiveSecondOverlayHighlight",
-    "FiveSecondOverlayMinimapButton",
-    "CreateSettingsButtonInitializer"
+    "SLASH_FSO1",
+    "SLASH_FSO2",
+    "issecretvalue",
+    "canaccessvalue",
+    "issecrettable",
+    "canaccesstable",
+    "C_Spell",
+    "C_Timer",
+    "Enum",
+    "LibStub",
+    "CreateFrame",
+    "GetTime",
+    "GetCursorPosition",
+    "UnitPowerType",
+    "UnitGUID",
+    "IsAutoRepeatSpell",
+    "Settings",
+    "SettingsPanel",
+    "CreateSettingsButtonInitializer",
+    "ColorPickerFrame",
+    "GameTooltip",
+    "Minimap",
+    "MinimalSliderWithSteppersMixin",
+    "UIParent",
+    "PlayerFrame",
+    "PlayerFrameManaBar",
+    "EllesmereUIUnitFrames_Player",
+    "ERB_PrimaryBar",
+    "print"
   ],
   "diagnostics.severity": {
     "undefined-global": "Error",
     "unused-local": "Error",
-    "unused-function": "Error"
+    "unused-function": "Error",
+    "param-type-mismatch": "Error",
+    "missing-return": "Error",
+    "need-check-nil": "Error",
+    "redundant-parameter": "Error",
+    "cast-type-mismatch": "Error"
   }
 }

@@ -12,8 +12,9 @@ exclude_files = {
 globals = {
 	"FiveSecondOverlayDB",
 	"FiveSecondOverlay_OnAddonCompartmentClick",
+	"FiveSecondOverlay_OnAddonCompartmentEnter",
+	"FiveSecondOverlay_OnAddonCompartmentLeave",
 	"FiveSecondOverlayHighlight",
-	"FiveSecondOverlayMinimapButton",
 	"SLASH_FSO1",
 	"SLASH_FSO2",
 	SlashCmdList = { fields = { "FSO" } },
