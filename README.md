@@ -7,7 +7,7 @@ Target client: World of Warcraft **Forever** (`## Interface: 16001`).
 ## Features
 
 - Starts when a mana spell finishes, or when a channel begins. A cast that is still winding up does not start it. Wand shots and auto-repeat do not start it.
-- Draws on EllesmereUI Resource Bars when that bar is present, then the Ellesmere unit-frame power bar, then the default player mana bar.
+- Draws on the player mana bar, including a custom resource bar when one is present.
 - White by default, slightly transparent, inset so it stays off the border.
 - Minimap launcher via LibDBIcon when present, otherwise a built-in button. On by default. The addon compartment and `/fso` open settings.
 

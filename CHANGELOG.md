@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.6.3
+
+The description names the player mana bar.
+
+### Changed
+
+- The highlight is described as drawing on the player mana bar, including a custom resource bar when one is present.
+- The minimap button tooltip says the button opens settings.
+
+## 1.6.2
+
+The highlight checks your power type when it changes, and only the width moves while the five seconds run down.
+
+### Changed
+
+- Mana versus another power type is read on `UNIT_DISPLAYPOWER` and when you enter the world.
+- The highlight keeps its anchors and updates its width each frame.
+
 ## 1.6.1
 
 The login line shows the addon name and version. The Joipov name color is a brighter violet.
@@ -40,7 +58,7 @@ The minimap button is on by default, including saves that still had it off.
 ### Changed
 
 - **Minimap Button** sits under Enable and starts on. Click opens settings.
-- The button uses LibDBIcon when that library is loaded, and the same frame name when it is not, so the default minimap, the addon compartment, Ellesmere, and ElvUI can all show it.
+- The button uses LibDBIcon when that library is loaded, and the same frame name when it is not, so the default minimap and the addon compartment can show it.
 
 ## 1.5.5
 

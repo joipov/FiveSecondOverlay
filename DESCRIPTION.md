@@ -6,6 +6,6 @@ For World of Warcraft: Forever (Classic Plus).
 
 It starts when the spell finishes, or when a channel begins. Starting a cast is not enough, and interrupting the cast does not leave the highlight up. Wand shots do not count.
 
-The highlight prefers an EllesmereUI resource bar, then an Ellesmere unit frame, then the normal player mana bar. Color defaults to white. Opacity and inset are in the settings. The minimap button is on and opens settings.
+The highlight prefers a custom resource bar when one is present, then the normal player mana bar. Color defaults to white. Opacity and inset are in the settings. The minimap button is on and opens settings.
 
 `/fso` opens settings. So does the addon compartment.

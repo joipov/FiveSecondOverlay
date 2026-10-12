@@ -5,8 +5,8 @@
   cast that is still winding up does not start it. It shrinks from the right
   toward the left over five seconds, then clears.
 
-  Host, in order: EllesmereUI Resource Bars (ERB_PrimaryBar), the Ellesmere
-  unit-frame power bar, the default player mana bar.
+  Host, in order: a custom resource bar, a custom unit-frame power bar, then the
+  default player mana bar.
 ]]
 
 local ADDON_NAME, ns = ...
@@ -28,6 +28,9 @@ local attachTicker
 local hostRecheckAt = 0
 local hostAttached = false
 local watchingForeignAddons = true
+local playerUsesMana = true
+local placedBar
+local placedInset
 
 local function Print(message)
 	print("|cff8b5cf6Joipov|r Five Second Overlay: " .. tostring(message or ""))
@@ -35,7 +38,18 @@ end
 
 ns.Print = Print
 
--- Login line: "Joipov Five Second Overlay (v1.6.0). Type /fso to open settings."
+function ns.Debug(...)
+	if not (ns.db and ns.db.debug) then
+		return
+	end
+	local count = select("#", ...)
+	local parts = {}
+	for i = 1, count do
+		parts[i] = tostring(select(i, ...))
+	end
+	Print(table.concat(parts, " "))
+end
+
 -- Name and version come from the TOC, so they never drift.
 function ns.Welcome()
 	local title = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Title") or "Five Second Overlay"
@@ -65,12 +79,16 @@ local function FrameUsable(host)
 	return width > 1 and host:IsVisible()
 end
 
-local function IsManaPower()
+local function ReadManaPower()
 	local powerType = UnitPowerType("player")
 	if SecretBlocked(powerType) then
 		return true
 	end
 	return powerType == Enum.PowerType.Mana
+end
+
+local function RefreshManaPower()
+	playerUsesMana = ReadManaPower()
 end
 
 -- true, false, or nil when the cost cannot be read (Forever secrets).
@@ -161,12 +179,22 @@ local function Layout(remaining)
 	local innerWidth = width - inset * 2
 	local drawWidth = innerWidth * frac
 
-	overlay:ClearAllPoints()
-	overlay:SetPoint("TOPLEFT", hostBar, "TOPLEFT", inset, -inset)
-	overlay:SetPoint("BOTTOMLEFT", hostBar, "BOTTOMLEFT", inset, inset)
+	if placedBar ~= hostBar or placedInset ~= inset then
+		overlay:ClearAllPoints()
+		overlay:SetPoint("TOPLEFT", hostBar, "TOPLEFT", inset, -inset)
+		overlay:SetPoint("BOTTOMLEFT", hostBar, "BOTTOMLEFT", inset, inset)
+		placedBar = hostBar
+		placedInset = inset
+		RaiseHostBorder()
+	end
 	overlay:SetWidth(drawWidth > 0.5 and drawWidth or 0.01)
-	overlay:SetShown(frac > 0 and drawWidth > 0.5)
-	RaiseHostBorder()
+	local show = frac > 0 and drawWidth > 0.5
+	if overlay:IsShown() ~= show then
+		overlay:SetShown(show)
+		if show then
+			RaiseHostBorder()
+		end
+	end
 end
 
 local function Stop()
@@ -194,6 +222,7 @@ local function EnsureOverlay(bar, outer)
 	end
 	hostBar = bar
 	hostOuter = outer
+	placedBar = nil
 	overlay:SetFrameLevel(bar:GetFrameLevel() + 2)
 	ApplyAppearance()
 	overlay:Hide()
@@ -248,7 +277,7 @@ local function OnUpdate()
 	if not active then
 		return
 	end
-	if not IsManaPower() then
+	if not playerUsesMana then
 		Stop()
 		return
 	end
@@ -261,7 +290,7 @@ local function OnUpdate()
 end
 
 local function StartOrReset()
-	if not ns.db.enabled or not IsManaPower() then
+	if not ns.db.enabled or not playerUsesMana then
 		return
 	end
 	local bar, outer = ResolveHostBar()
@@ -284,7 +313,7 @@ local function ScheduleAttachRetries()
 		attachTicker:Cancel()
 		attachTicker = nil
 	end
-	-- EllesmereUI may load after us; retry for a few seconds.
+	-- The host bar may load after us; retry for a few seconds.
 	local attempts = 0
 	attachTicker = C_Timer.NewTicker(0.5, function()
 		attempts = attempts + 1
@@ -314,6 +343,7 @@ local function OnPlayerCast(unit, spellID)
 end
 
 local function OnEnterWorld(isLogin)
+	RefreshManaPower()
 	if isLogin then
 		ns.Welcome()
 	end
@@ -349,7 +379,8 @@ function handlers.PLAYER_ENTERING_WORLD()
 end
 
 handlers.UNIT_DISPLAYPOWER = function()
-	if not IsManaPower() then
+	RefreshManaPower()
+	if not playerUsesMana then
 		Stop()
 	end
 end

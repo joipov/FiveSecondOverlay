@@ -9,11 +9,18 @@ exclude_files = {
 	"assets/",
 }
 
+files["tests/"] = {
+	std = "lua51",
+}
+
 -- Globals this addon writes. It writes them through _G, so luacheck does not
 -- require them; the list documents intent and catches accidental renames.
 globals = {
 	"FiveSecondOverlayDB",
 	"FiveSecondOverlayHighlight",
+	"FiveSecondOverlay_OnAddonCompartmentClick",
+	"FiveSecondOverlay_OnAddonCompartmentEnter",
+	"FiveSecondOverlay_OnAddonCompartmentLeave",
 	"SLASH_FSO1",
 	"SLASH_FSO2",
 	SlashCmdList = { fields = { "FSO" } },
