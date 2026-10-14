@@ -98,7 +98,7 @@ local function SpellCostsMana(spellID)
 		return nil
 	end
 	local costs = C_Spell.GetSpellPowerCost(spellID)
-	if SecretBlocked(costs) then
+	if SecretBlocked(costs) or type(costs) ~= "table" then
 		return nil
 	end
 	local mana = Enum.PowerType.Mana
