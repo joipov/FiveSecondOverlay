@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.4
+
+A spell with no power cost no longer stops the mana highlight.
+
+### Fixed
+
+- A spell whose power cost is missing is ignored, so the highlight does not error.
+
 ## 1.6.3
 
 The description names the player mana bar.

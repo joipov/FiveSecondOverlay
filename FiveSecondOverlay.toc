@@ -2,7 +2,7 @@
 ## Title: Five Second Overlay
 ## Notes: Subtle 5-second rule highlight on your player mana bar.
 ## Author: Joipov
-## Version: 1.6.3
+## Version: 1.6.4
 ## Category: |cff8b5cf6Joipov|r Tools
 ## IconTexture: Interface\Icons\Spell_Holy_MagicalSentry
 ## SavedVariables: FiveSecondOverlayDB
