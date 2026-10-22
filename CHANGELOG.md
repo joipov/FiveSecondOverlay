@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.6.5
+
+The highlight now arms in combat and follows upright resource bars.
+
+### Fixed
+
+- A mana cost hidden in combat now arms the highlight when the cost's resource is readable as mana, instead of the highlight never starting in combat.
+- On an upright custom resource bar the highlight shrinks along the height instead of the width.
+- A custom resource bar built at zero opacity (a spec with no primary power) no longer captures the highlight instead of the next bar.
+
+### Changed
+
+- **Minimap button** stays active while the addon is off.
+
 ## 1.6.4
 
 A spell with no power cost no longer stops the mana highlight.

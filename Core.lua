@@ -31,6 +31,7 @@ local watchingForeignAddons = true
 local playerUsesMana = true
 local placedBar
 local placedInset
+local placedVertical
 
 local function Print(message)
 	print("|cff8b5cf6Joipov|r Five Second Overlay: " .. tostring(message or ""))
@@ -76,7 +77,15 @@ local function FrameUsable(host)
 		return false
 	end
 	local width = host:GetWidth()
-	return width > 1 and host:IsVisible()
+	if width <= 1 or not host:IsVisible() then
+		return false
+	end
+	-- A host can build its bar at zero alpha when the spec has no primary
+	-- power to show. That bar must not capture the overlay.
+	if host.GetEffectiveAlpha and host:GetEffectiveAlpha() <= 0 then
+		return false
+	end
+	return true
 end
 
 local function ReadManaPower()
@@ -97,20 +106,27 @@ local function SpellCostsMana(spellID)
 	if not spellID or spellID == 0 or SecretBlocked(spellID) then
 		return nil
 	end
-	local costs = C_Spell.GetSpellPowerCost(spellID)
-	if SecretBlocked(costs) or type(costs) ~= "table" then
+	local ok, costs = pcall(C_Spell.GetSpellPowerCost, spellID)
+	if not ok or SecretBlocked(costs) or type(costs) ~= "table" then
 		return nil
 	end
 	local mana = Enum.PowerType.Mana
 	for i = 1, #costs do
 		local entry = costs[i]
 		if not SecretBlocked(entry) then
+			local isMana = not SecretBlocked(entry.type) and entry.type == mana
 			local cost = ReadableNumber(entry.cost)
 			if cost then
-				if cost > 0 and entry.type == mana then
+				if cost > 0 and isMana then
 					return true
 				end
 			elseif SecretBlocked(entry.cost) then
+				-- The amount is a combat secret, so it cannot be told apart
+				-- from a plain 0. A readable mana type still proves the
+				-- spell spends mana; only an unreadable type stays unknown.
+				if isMana then
+					return true
+				end
 				return nil
 			end
 		end
@@ -166,8 +182,12 @@ end
 local function Layout(remaining)
 	local db = ns.db
 	local inset = db.inset
-	local width = hostBar:GetWidth()
-	if width <= 0 then
+	-- Custom resource bars can stand upright. The highlight then shrinks
+	-- along the height instead of the width.
+	local orientation = hostBar.GetOrientation and hostBar:GetOrientation()
+	local vertical = not SecretBlocked(orientation) and orientation == "VERTICAL"
+	local size = vertical and hostBar:GetHeight() or hostBar:GetWidth()
+	if size <= 0 then
 		return
 	end
 	local frac = remaining / FSR_DURATION
@@ -176,19 +196,29 @@ local function Layout(remaining)
 	elseif frac > 1 then
 		frac = 1
 	end
-	local innerWidth = width - inset * 2
-	local drawWidth = innerWidth * frac
+	local innerSize = size - inset * 2
+	local drawSize = innerSize * frac
 
-	if placedBar ~= hostBar or placedInset ~= inset then
+	if placedBar ~= hostBar or placedInset ~= inset or placedVertical ~= vertical then
 		overlay:ClearAllPoints()
-		overlay:SetPoint("TOPLEFT", hostBar, "TOPLEFT", inset, -inset)
-		overlay:SetPoint("BOTTOMLEFT", hostBar, "BOTTOMLEFT", inset, inset)
+		if vertical then
+			overlay:SetPoint("TOPLEFT", hostBar, "TOPLEFT", inset, -inset)
+			overlay:SetPoint("TOPRIGHT", hostBar, "TOPRIGHT", -inset, -inset)
+		else
+			overlay:SetPoint("TOPLEFT", hostBar, "TOPLEFT", inset, -inset)
+			overlay:SetPoint("BOTTOMLEFT", hostBar, "BOTTOMLEFT", inset, inset)
+		end
 		placedBar = hostBar
 		placedInset = inset
+		placedVertical = vertical
 		RaiseHostBorder()
 	end
-	overlay:SetWidth(drawWidth > 0.5 and drawWidth or 0.01)
-	local show = frac > 0 and drawWidth > 0.5
+	if vertical then
+		overlay:SetHeight(drawSize > 0.5 and drawSize or 0.01)
+	else
+		overlay:SetWidth(drawSize > 0.5 and drawSize or 0.01)
+	end
+	local show = frac > 0 and drawSize > 0.5
 	if overlay:IsShown() ~= show then
 		overlay:SetShown(show)
 		if show then

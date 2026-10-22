@@ -82,7 +82,7 @@ function ns.InitOptions()
 		ns.db,
 		Settings.VarType.Boolean,
 		"Enable Five Second Overlay",
-		true
+		ns.defaults.enabled
 	)
 	enableSetting:SetValueChangedCallback(function()
 		ns.SetEnabled()
@@ -100,12 +100,12 @@ function ns.InitOptions()
 		ns.db,
 		Settings.VarType.Boolean,
 		"Minimap button",
-		true
+		ns.defaults.showMinimapButton
 	)
 	minimapSetting:SetValueChangedCallback(function()
 		ns.UpdateMinimapButton()
 	end)
-	local minimapCheckbox = Settings.CreateCheckbox(
+	Settings.CreateCheckbox(
 		category,
 		minimapSetting,
 		"Button on the minimap. Opens settings."
@@ -154,7 +154,8 @@ function ns.InitOptions()
 	local function Enabled()
 		return enableSetting:GetValue()
 	end
-	for _, control in ipairs({ minimapCheckbox, alphaSlider, insetSlider, colorButton }) do
+	-- The Minimap button row stays live while the addon is off (house style).
+	for _, control in ipairs({ alphaSlider, insetSlider, colorButton }) do
 		control:SetParentInitializer(enableCheckbox, Enabled)
 	end
 

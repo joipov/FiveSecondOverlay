@@ -2,7 +2,7 @@
 
 A faint highlight on your mana bar for the five seconds after a mana spell. The bar shrinks from the right toward the left, then clears.
 
-Target client: World of Warcraft **Forever** (`## Interface: 16001`).
+Target client: World of Warcraft **Forever**, release client (`_forever_`, `## Interface: 16001`). The old Forever beta (`_classic_beta_`) uses the same TOC and game type.
 
 ## Features
 
@@ -34,8 +34,10 @@ The repository lives outside the game folder; the AddOns entry is a
 directory junction to it:
 
 ```
-mklink /J "C:\Program Files (x86)\World of Warcraft\_classic_beta_\Interface\AddOns\FiveSecondOverlay" "D:\Repos\Joipov\FiveSecondOverlay"
+mklink /J "C:\Program Files (x86)\World of Warcraft\_forever_\Interface\AddOns\FiveSecondOverlay" "D:\Repos\Joipov\FiveSecondOverlay"
 ```
+
+The same link works under `_classic_beta_` if the old beta client is still installed.
 
 Static checks (no game client needed):
 
