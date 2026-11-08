@@ -149,10 +149,20 @@ local function ResolveHostBar()
 		return eui.Power, eui.Power
 	end
 
+	-- Current Forever nests the stock power bar under the player frame
+	-- content and exposes it through this accessor. The direct globals below
+	-- are kept for older builds.
+	local player = _G.PlayerFrame
+	local getManaBar = _G.PlayerFrame_GetManaBar
+	if player and getManaBar then
+		local manaBar = getManaBar()
+		if FrameUsable(manaBar) then
+			return manaBar, manaBar
+		end
+	end
 	if FrameUsable(_G.PlayerFrameManaBar) then
 		return _G.PlayerFrameManaBar, _G.PlayerFrameManaBar
 	end
-	local player = _G.PlayerFrame
 	if player then
 		if FrameUsable(player.manabar) then
 			return player.manabar, player.manabar

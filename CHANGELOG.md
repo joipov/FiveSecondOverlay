@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.6
+
+The stock mana bar fallback matches the current Forever player frame.
+
+### Fixed
+
+- Without a host resource bar, the highlight finds the stock player mana bar through `PlayerFrame_GetManaBar()`. The `PlayerFrameManaBar` global no longer exists on the current client.
+
+### Changed
+
+- Re-checked against Forever client 1.60.1.70862 and EllesmereUI 9.8.2.
+
 ## 1.6.5
 
 The highlight now arms in combat and follows upright resource bars.

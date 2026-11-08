@@ -1,8 +1,8 @@
 # Five Second Overlay audit
 
-Target: World of Warcraft Forever, `## Interface: 16001` (client 1.60.1.70425), Lua 5.1.
-Host addons checked at their 2026-10-19 builds: EllesmereUIResourceBars and
-EllesmereUIUnitFrames 9.6.1, in both `_classic_beta_` and `_retail_`.
+Target: World of Warcraft Forever, `## Interface: 16001` (client 1.60.1.70862), Lua 5.1.
+Host addons checked at their 2026-11-08 builds: EllesmereUIResourceBars and
+EllesmereUIUnitFrames 9.8.2, in `_forever_`.
 
 This note is for development. It is not shipped in the addon zip.
 
@@ -14,6 +14,15 @@ across Ellesmere layout reloads: `ERB_PrimaryBar` and its `_sb` fill,
 `EllesmereUIUnitFrames_Player.Power`. `ResolveHostBar` order stands.
 Ellesmere's own mana-regen spark and spell-cost prediction attach at
 neighbouring frame levels and do not clash; they were not copied.
+
+## What changed in 1.6.6
+
+- `ResolveHostBar` now resolves the stock player mana bar through
+  `PlayerFrame_GetManaBar()`. The `PlayerFrameManaBar` global is gone from the
+  current Forever UI source, so the old first fallback never matched. The
+  accessor returns the mana bar under
+  `PlayerFrame.PlayerFrameContent.PlayerFrameContentMain.ManaBarArea`. The
+  legacy globals stay behind it for older builds.
 
 ## What changed in 1.6.5
 
@@ -37,8 +46,9 @@ neighbouring frame levels and do not clash; they were not copied.
 - The highlight works on the stock player mana bar with no host addon, and
   `OnUpdate` runs only while the highlight is active.
 - Build 70425 reorganised the player frame (Warcraft Wiki, Patch 1.60.1
-  notes); the `PlayerFrameManaBar` / `player.manabar` / `player.ManaBar`
-  fallback chain is the surface to re-check first if the stock bar moves.
+  notes); the `PlayerFrame_GetManaBar()` / `player.manabar` /
+  `player.ManaBar` fallback chain is the surface to re-check first if the
+  stock bar moves.
 
 ## Checked in the client (manual pass, 1.6.5)
 
