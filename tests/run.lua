@@ -13,6 +13,7 @@ local function load(file)
 end
 
 load("Database.lua")
+load("Profile.lua")
 
 local passed, failed = 0, 0
 
@@ -85,6 +86,23 @@ test("LoadDB moves minimapAngle into minimapIcon", function()
 	local db = ns.LoadDB({ version = 7, minimapAngle = 190 })
 	eq(db.minimapIcon.minimapPos, 190, "minimapPos")
 	eq(db.minimapAngle, nil, "minimapAngle")
+end)
+
+test("profile export roundtrips settings", function()
+	ns.db = ns.LoadDB({ a = 0.5, inset = 3, minimapIcon = { minimapPos = 33 } })
+	local str = ns.ExportProfile()
+	eq(str:sub(1, 22), "!JPV:FiveSecondOverlay", "prefix")
+	ns.db = ns.LoadDB(nil)
+	eq(ns.db.a, 0.35, "reset")
+	eq(ns.ImportProfile(str), true, "import")
+	eq(ns.db.a, 0.5, "a")
+	eq(ns.db.inset, 3, "inset")
+	eq(ns.db.minimapIcon.minimapPos, 33, "minimapPos")
+end)
+
+test("profile import rejects another addon", function()
+	ns.db = ns.LoadDB(nil)
+	eq(ns.ImportProfile("!JPV:GearStats!{a=0.5}"), nil, "other")
 end)
 
 if failed > 0 then

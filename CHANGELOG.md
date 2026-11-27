@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.6.8
+
+Settings can be copied as a string and pasted on another character or computer.
+
+### Added
+
+- **Export profile** and **Import profile** in settings. Import reloads the UI.
+
+## 1.6.7
+
+Settings no longer indent opacity, edge gap, and color under the minimap button.
+
+### Changed
+
+- Feature rows grey out when the addon is off. They stay full-width. The minimap button is last and stays clickable.
+
 ## 1.6.6
 
 The stock mana bar fallback matches the current Forever player frame.

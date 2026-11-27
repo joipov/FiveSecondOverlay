@@ -87,29 +87,25 @@ function ns.InitOptions()
 	enableSetting:SetValueChangedCallback(function()
 		ns.SetEnabled()
 	end)
-	local enableCheckbox = Settings.CreateCheckbox(
+	Settings.CreateCheckbox(
 		category,
 		enableSetting,
 		"Highlight on your mana bar during the 5-second rule. It shrinks from the right."
 	)
 
-	local minimapSetting = Settings.RegisterAddOnSetting(
-		category,
-		"FSO_SHOW_MINIMAP",
-		"showMinimapButton",
-		ns.db,
-		Settings.VarType.Boolean,
-		"Minimap button",
-		ns.defaults.showMinimapButton
-	)
-	minimapSetting:SetValueChangedCallback(function()
-		ns.UpdateMinimapButton()
-	end)
-	Settings.CreateCheckbox(
-		category,
-		minimapSetting,
-		"Button on the minimap. Opens settings."
-	)
+	local function GateOn(initializer)
+		if not initializer then
+			return
+		end
+		if initializer.AddModifyPredicate then
+			initializer:AddModifyPredicate(function()
+				return enableSetting:GetValue()
+			end)
+		end
+		if initializer.AddEvaluateStateCVar then
+			initializer:AddEvaluateStateCVar("FSO_ENABLED")
+		end
+	end
 
 	local alphaSetting = Settings.RegisterAddOnSetting(
 		category,
@@ -151,13 +147,29 @@ function ns.InitOptions()
 
 	local colorButton = AddColorButton(category, "Color of the highlight. White is the default.")
 
-	local function Enabled()
-		return enableSetting:GetValue()
-	end
-	-- The Minimap button row stays live while the addon is off (house style).
-	for _, control in ipairs({ alphaSlider, insetSlider, colorButton }) do
-		control:SetParentInitializer(enableCheckbox, Enabled)
-	end
+	GateOn(alphaSlider)
+	GateOn(insetSlider)
+	GateOn(colorButton)
+
+	local minimapSetting = Settings.RegisterAddOnSetting(
+		category,
+		"FSO_SHOW_MINIMAP",
+		"showMinimapButton",
+		ns.db,
+		Settings.VarType.Boolean,
+		"Minimap button",
+		ns.defaults.showMinimapButton
+	)
+	minimapSetting:SetValueChangedCallback(function()
+		ns.UpdateMinimapButton()
+	end)
+	Settings.CreateCheckbox(
+		category,
+		minimapSetting,
+		"Button on the minimap. Opens settings. Stays available when the addon is off."
+	)
+
+	ns.AddProfileShareButtons(category)
 
 	Settings.RegisterAddOnCategory(category)
 end
